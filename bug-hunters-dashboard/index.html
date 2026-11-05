@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bug Hunters – Monthly dashboard</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>Bug Hunters · Monthly dashboard</h1>
+  <p class="sub" id="sub">Upload your Excel to get started.</p>
+
+  <div class="card upload" id="drop">
+    <div>
+      <b>Cases Excel file</b>
+      <div class="s">Sheet <code>Datos</code> with columns OWNER, ID, DATE, TYPE, HOURS, LOE, QA STATUS, Month, QA Fixed Comment. Data is processed in your browser; nothing is uploaded to a server.</div>
+      <div class="s" id="status"></div>
+    </div>
+    <div class="upbtns">
+      <label class="btn primary"><input type="file" id="file" accept=".xlsx,.xlsm,.xls,.csv" hidden>Upload Excel</label>
+      <button class="btn" id="clear" hidden>Clear data</button>
+    </div>
+  </div>
+  <div class="note err" id="err" hidden></div>
+
+  <div id="app" hidden>
+    <div class="bar">
+      <span><span class="lbl">Month (details and summary)</span><span class="seg" id="mseg"></span></span>
+      <span><span class="lbl">Person</span><select id="psel"></select></span>
+    </div>
+    <div class="note" id="note" hidden></div>
+
+    <h2 class="sec">Month comparison</h2>
+    <div class="bar"><span class="lbl">Months shown in these charts</span><span class="chips" id="chips"></span></div>
+    <div class="grid3">
+      <div class="card"><h3>Completed cases by person</h3><p class="s">One row = one case.</p><div id="c1"></div></div>
+      <div class="card"><h3>Hours by person</h3><p class="s">Sum of HOURS.</p><div id="c2"></div></div>
+      <div class="card"><h3>Error % by person</h3><p class="s">(Failed + Critical) ÷ QA-reviewed cases, excluding N/A. Shown with 5+ reviewed.</p><div id="c4"></div></div>
+      <div class="card"><h3>Total cases by month</h3><p class="s">Whole team, selected months. * = partial month.</p><div id="c9"></div></div>
+      <div class="card"><h3>Team error % by month</h3><p class="s">Whole team, selected months. (Failed + Critical) ÷ QA-reviewed cases, N/A excluded. * = partial month.</p><div id="c12"></div></div>
+    </div>
+    <div class="leg" id="lmonths"></div>
+
+    <h2 class="sec">Month details</h2>
+    <div class="grid">
+      <div class="card"><h3>QA status by person</h3><p class="s" id="s3"></p><div id="c3"></div><div class="leg" id="l3"></div></div>
+      <div class="card"><h3>QA status breakdown</h3><p class="s" id="s10"></p><div id="c10"></div></div>
+      <div class="card"><h3>Hours by case type</h3><p class="s" id="s5"></p><div id="c5"></div></div>
+      <div class="card"><h3>Cases by case type</h3><p class="s" id="s11"></p><div id="c11"></div></div>
+    </div>
+    <div class="card"><h3>10 longest cases (by ID)</h3><p class="s" id="s6"></p><div class="scroll" id="c6"></div></div>
+
+    <h2 class="sec" id="h-sum">Summary</h2>
+    <div class="kpis" id="kpis"></div>
+    <div class="card"><h3>Summary by person</h3><p class="s" id="s7"></p><div class="scroll" id="c7"></div></div>
+    <div class="card"><h3>Errors by person</h3><p class="s" id="s8"></p><div class="scroll" id="c8"></div></div>
+    <p class="foot" id="foot"></p>
+  </div>
+</div>
+<div id="tip"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
