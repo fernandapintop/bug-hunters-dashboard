@@ -55,3 +55,7 @@ td small{display:block;color:var(--muted);font-size:11px}
 #tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--surface);padding:6px 9px;border-radius:6px;font-size:12px;line-height:1.4;opacity:0;z-index:9;max-width:280px}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
 .foot{color:var(--muted);font-size:12px;margin-top:16px}
+
+.head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ins{margin:6px 0 0;padding-left:18px}
+.ins li{margin:6px 0;max-width:900px}

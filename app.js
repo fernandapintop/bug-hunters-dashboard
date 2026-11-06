@@ -267,6 +267,52 @@
       (people.length > 1 ? row('Team total', tot, '', ' style="font-weight:600"') : '') + '</table>';
   }
 
+  // ---------- Month insights (auto-generated, English, team-wide)
+  function insights() {
+    const out = [], hasPrev = M > 0, pn = hasPrev ? model.months[M - 1].name : '';
+    const st = stats(rowsOf(M, -1)), ps = hasPrev ? stats(rowsOf(M - 1, -1)) : null;
+    const chg = (a, b) => b ? (a - b) / b * 100 : null;
+    const sg = d => (d > 0 ? '+' : '') + d.toFixed(0) + '%';
+    const pp = (a, b) => { const d = (a - b) * 100; return (d > 0 ? '+' : '') + d.toFixed(1) + ' pp'; };
+    const per = team.map(p => ({ p, name: NAME(model.owners[p]), s: stats(rowsOf(M, p)), v: hasPrev ? stats(rowsOf(M - 1, p)) : null }));
+
+    let t = `The team completed ${f0(st.n)} cases in ${f1(st.h)} hours (${f2(st.avg)} h per case on average).`;
+    if (ps) t += ` That is ${sg(chg(st.n, ps.n))} in cases and ${sg(chg(st.h, ps.h))} in hours vs ${pn}.`;
+    out.push(t);
+
+    const byN = [...per].sort((a, b) => b.s.n - a.s.n), byH = [...per].sort((a, b) => b.s.h - a.s.h);
+    if (byN[0] && st.n) out.push(`${byN[0].name} handled the most cases (${f0(byN[0].s.n)}, ${(byN[0].s.n / st.n * 100).toFixed(0)}% of the team's volume). ${byH[0].name} logged the most hours (${f1(byH[0].s.h)} h, ${(byH[0].s.h / st.h * 100).toFixed(0)}% of the total).` + (byN[0].p !== byH[0].p ? ' Highest volume and highest hours are different people, so effort per case varies a lot across the team.' : ''));
+
+    if (hasPrev) {
+      const mv = per.filter(x => x.v && x.v.n > 0).map(x => ({ ...x, d: chg(x.s.n, x.v.n) })).sort((a, b) => Math.abs(b.d) - Math.abs(a.d))[0];
+      if (mv && Math.abs(mv.d) >= 15) out.push(`Biggest change in volume: ${mv.name} went from ${mv.v.n} to ${mv.s.n} cases (${sg(mv.d)}) vs ${pn}.`);
+    }
+
+    if (st.errRaw != null) {
+      let q = `Team error rate was ${pc(st.errRaw)} (${st.errors} Failed + Critical out of ${st.rev} QA-reviewed cases that apply).`;
+      if (ps && ps.errRaw != null) q += ` ${pp(st.errRaw, ps.errRaw)} vs ${pn}.`;
+      out.push(q);
+      const withErr = per.filter(x => x.s.err != null).sort((a, b) => a.s.err - b.s.err);
+      if (withErr.length >= 2) { const lo = withErr[0], hi = withErr[withErr.length - 1]; out.push(`Lowest error rate: ${lo.name} (${pc(lo.s.err)} of ${lo.s.rev} reviewed). Highest: ${hi.name} (${pc(hi.s.err)} of ${hi.s.rev} reviewed).`); }
+    }
+    const flagged = st.na + st.c[1] + st.c[2] + st.c[3];
+    out.push(`${pc(st.cov)} of cases went through QA (${st.rev + st.na} of ${st.n}).` + (flagged ? ` ${st.na} of ${flagged} QA findings (${(st.na / flagged * 100).toFixed(0)}%) were marked N/A and left out of the error rate.` : ''));
+
+    const top = cases(teamModel(), M, -1)[0];
+    if (top) out.push(`Longest case: ID ${top.id || 'n/a'} with ${f2(top.h)} hours across ${top.rows.length} row(s), worked by ${[...new Set(top.rows.map(r => FIRST(model.owners[r.o])))].join(', ')} (${[...new Set(top.rows.map(r => model.types[r.t]))].join(' + ')}).`);
+
+    const ty = {}; rowsOf(M, -1).forEach(r => { const x = ty[r.t] = ty[r.t] || { n: 0, h: 0 }; x.n++; x.h += r.h; });
+    const tl = Object.entries(ty).map(([t, v]) => ({ name: model.types[t], ...v })).sort((a, b) => b.n - a.n);
+    if (tl[0] && st.n) {
+      const th = [...tl].sort((a, b) => b.h - a.h)[0];
+      out.push(`${tl[0].name} was the most common case type (${tl[0].n} cases, ${(tl[0].n / st.n * 100).toFixed(0)}% of cases, ${(tl[0].h / st.h * 100).toFixed(0)}% of hours).` + (th.name !== tl[0].name ? ` ${th.name} took the most hours (${f1(th.h)} h, ${(th.h / st.h * 100).toFixed(0)}% of the total).` : ''));
+      const heavy = tl.filter(x => x.n >= 5).sort((a, b) => b.h / b.n - a.h / a.n)[0];
+      if (heavy) out.push(`Highest effort per case (types with 5+ cases): ${heavy.name} at ${f2(heavy.h / heavy.n)} h per case, vs ${f2(st.avg)} h overall.`);
+    }
+    if (model.months[M].partial) out.push(`Note: ${model.months[M].name} is a partial month (data up to ${model.months[M].last}); totals are not comparable with full months.`);
+    return out;
+  }
+
   // ---------- render
   function render() {
     if (!model) return;
@@ -298,8 +344,19 @@
     topCases($('c6'));
     summary();
     errorsTable();
+    const ins = insights();
+    $('s13').textContent = `${mname(M)} · whole team (not filtered by person). Generated automatically from the loaded data.`;
+    $('c13').innerHTML = ins.map(t => `<li>${t}</li>`).join('');
     $('foot').textContent = `${model.rows.length} rows loaded. Each row counts as one case.`;
   }
+
+  $('copyIns').addEventListener('click', async () => {
+    if (!model) return;
+    const text = `${mname(M)} – Bug Hunters summary\n` + insights().map(t => '- ' + t).join('\n');
+    try { await navigator.clipboard.writeText(text); $('copyIns').textContent = 'Copied'; }
+    catch (e) { $('copyIns').textContent = 'Copy failed'; }
+    setTimeout(() => $('copyIns').textContent = 'Copy summary', 1800);
+  });
 
   // restore last upload, if the browser kept it
   try {
